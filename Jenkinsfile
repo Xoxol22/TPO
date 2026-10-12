@@ -9,6 +9,9 @@ pipeline {
     environment {
         BMC_URL = 'https://127.0.0.1:2443'
         BMC_HOST = 'https://127.0.0.1:2443'
+        OPENBMC_WEB_URL = 'http://127.0.0.1:8100'
+        WEBUI_ROOT = '/opt/openbmc/webui'
+        WEBUI_PORT = '8100'
         BMC_USER = 'root'
         BMC_PASSWORD = '0penBmc'
         BMC_VERIFY_TLS = '0'
@@ -55,7 +58,7 @@ pipeline {
                     echo $! > artifacts/qemu/qemu.pid
 
                     for attempt in $(seq 1 180); do
-                        if curl --silent --show-error --insecure \
+                        if curl --fail --max-time 5 --silent --show-error --insecure \
                             --user "$BMC_USER:$BMC_PASSWORD" \
                             "$BMC_URL/redfish/v1/" >/dev/null 2>&1; then
                             echo "OpenBMC is ready after ${attempt} checks" | tee artifacts/qemu/readiness.txt
@@ -126,6 +129,22 @@ pipeline {
             steps {
                 catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
                     sh '''#!/usr/bin/env bash
+                        set -eu
+                        test -f "$WEBUI_ROOT/index.html"
+                        export JENKINS_NODE_COOKIE=dontKillMe
+                        nohup "$CI_VENV/bin/python" lab4-selenium/webui_server.py \
+                            > artifacts/webui/server.log 2>&1 &
+                        echo $! > artifacts/webui/server.pid
+                        ready=0
+                        for attempt in $(seq 1 20); do
+                            if curl --fail --silent --max-time 3 "$OPENBMC_WEB_URL/" \
+                                > artifacts/webui/index.html; then
+                                ready=1
+                                break
+                            fi
+                            sleep 1
+                        done
+                        test "$ready" = 1
                         set +e
                         xvfb-run -a "$CI_VENV/bin/python" -m pytest \
                             lab4-selenium/openbmc_auth_tests.py \
@@ -154,6 +173,9 @@ pipeline {
                 if [[ -f artifacts/qemu/qemu.pid ]]; then
                     kill "$(cat artifacts/qemu/qemu.pid)" 2>/dev/null || true
                     wait "$(cat artifacts/qemu/qemu.pid)" 2>/dev/null || true
+                fi
+                if [[ -f artifacts/webui/server.pid ]]; then
+                    kill "$(cat artifacts/webui/server.pid)" 2>/dev/null || true
                 fi
                 rm -f artifacts/qemu/openbmc-ci.mtd
             '''
