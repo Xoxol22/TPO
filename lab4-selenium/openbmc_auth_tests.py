@@ -15,8 +15,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
-    TimeoutException,
-    NoSuchElementException
+    TimeoutException
 )
 
 
@@ -80,13 +79,20 @@ class OpenBMCTests(unittest.TestCase):
             (By.CSS_SELECTOR, 'input[autocomplete="username"]'),
         ]
 
-        for selector in selectors:
-            try:
-                return self.driver.find_element(*selector)
-            except NoSuchElementException:
-                pass
-
-        self.fail("Не найдено поле логина")
+        try:
+            return self.wait.until(
+                lambda driver: next(
+                    (
+                        element
+                        for selector in selectors
+                        for element in driver.find_elements(*selector)
+                        if element.is_displayed()
+                    ),
+                    False,
+                )
+            )
+        except TimeoutException:
+            self.fail("Не найдено поле логина")
 
     def find_password_field(self):
         selectors = [
@@ -96,13 +102,20 @@ class OpenBMCTests(unittest.TestCase):
             (By.CSS_SELECTOR, 'input[autocomplete="current-password"]'),
         ]
 
-        for selector in selectors:
-            try:
-                return self.driver.find_element(*selector)
-            except NoSuchElementException:
-                pass
-
-        self.fail("Не найдено поле пароля")
+        try:
+            return self.wait.until(
+                lambda driver: next(
+                    (
+                        element
+                        for selector in selectors
+                        for element in driver.find_elements(*selector)
+                        if element.is_displayed()
+                    ),
+                    False,
+                )
+            )
+        except TimeoutException:
+            self.fail("Не найдено поле пароля")
 
     def find_login_button(self):
         selectors = [
@@ -127,13 +140,20 @@ class OpenBMCTests(unittest.TestCase):
             ),
         ]
 
-        for selector in selectors:
-            try:
-                return self.driver.find_element(*selector)
-            except NoSuchElementException:
-                pass
-
-        self.fail("Не найдена кнопка входа")
+        try:
+            return self.wait.until(
+                lambda driver: next(
+                    (
+                        element
+                        for selector in selectors
+                        for element in driver.find_elements(*selector)
+                        if element.is_displayed()
+                    ),
+                    False,
+                )
+            )
+        except TimeoutException:
+            self.fail("Не найдена кнопка входа")
 
     def login(self, username=USERNAME, password=PASSWORD):
         self.open_login_page()
