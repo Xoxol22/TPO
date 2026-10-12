@@ -33,6 +33,11 @@ class OpenBMCTests(unittest.TestCase):
     def setUp(self):
         options = webdriver.ChromeOptions()
 
+        # Chromium запускается внутри Jenkins Docker-контейнера.
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+
         # У OpenBMC в QEMU самоподписанный сертификат
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--allow-insecure-localhost")

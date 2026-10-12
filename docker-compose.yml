@@ -10,7 +10,7 @@ services:
       - "50000:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
-      - ${OPENBMC_IMAGE_PATH}:/opt/openbmc/openbmc.mtd:ro
+      - "/home/semen/Документы/тпо/тпо/lab3/openbmc-lab3.mtd:/opt/openbmc/openbmc.mtd:ro"
 
 volumes:
   jenkins_home:
