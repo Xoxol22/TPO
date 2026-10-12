@@ -20,7 +20,12 @@ from selenium.common.exceptions import (
 )
 
 
-OPENBMC_URL = "http://127.0.0.1:8000"
+# В Jenkins используем BMC_URL из Pipeline (HTTPS 2443).
+# Старый HTTP-порт 8000 остается запасным вариантом для локального запуска ЛР4.
+OPENBMC_URL = os.getenv(
+    "OPENBMC_WEB_URL",
+    os.getenv("BMC_URL", "http://127.0.0.1:8000"),
+)
 
 USERNAME = "root"
 PASSWORD = "0penBmc"
